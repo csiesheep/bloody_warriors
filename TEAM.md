@@ -19,6 +19,7 @@
 | 檔案 | 主人 |
 |---|---|
 | `src/game/core.ts`(狀態機、移動、純邏輯) | BE |
+| `src/game/combat.ts`(M1:連段/hitbox/敵兵 AI/combo/hit-stop,純邏輯) | BE |
 | `src/game/config.ts`(數值表;值抄自 DESIGN.md) | BE |
 | `src/game/render.ts`(Three.js 場景、模型、相機) | FE |
 | `src/game/main.ts`(頁面啟動、輸入、探針) | FE |

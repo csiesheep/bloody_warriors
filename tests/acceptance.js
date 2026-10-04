@@ -38,3 +38,68 @@ check('終點仍在界內', () =>
       )
     : 'TODO: probe 未載入'
 );
+
+// ── M1(DESIGN.md v0.4:§3.1 普攻 15 / 硬直 0.3 / hit-stop 0.05;§2.3 敵兵 HP30 / 傷 5 / speed 3.5;§3.2 combo 0.8)──
+// ?probe=2 固定時間軸(決定性):t=0 假人在 (0,-5)、將軍朝 -z;t=0.1 第 1 段;t=0.35 第 2 段(擊殺)。
+// gameT ≥ 0.8 時回報 __probe = { M0 欄位, enemyHp, enemyState, generalHp, combo, hitStop, cfg: 完整 config }。
+// 時間軸算據:hitbox 有效幀在 windup 0.2s 後;擊殺 hit-stop 0.05s;假人 0.5s Spawn + 3.5 m/s,
+// gameT 0.8 時仍在 3.95 m 外(攻擊範圍 1.5 m),故 generalHp 必為 100。
+
+section('2 · M1 SPEC 常數對照(DESIGN.md v0.4)');
+check('attack.damage = 15', () => {
+  const a = probe && probe.cfg && probe.cfg.attack;
+  return a ? eq(a.damage, 15, '普攻傷害') : 'TODO: probe.cfg 缺 attack 段';
+});
+check('enemy.hp = 30 / damage = 5 / speed = 3.5', () => {
+  const e = probe && probe.cfg && probe.cfg.enemy;
+  if (!e) return 'TODO: probe.cfg 缺 enemy 段';
+  const a = eq(e.hp, 30, '敵兵 HP');
+  if (a !== true) return a;
+  const b = eq(e.damage, 5, '敵兵傷害');
+  if (b !== true) return b;
+  const c = eq(e.speed, 3.5, '敵兵 speed(起始值)');
+  if (c !== true) return c;
+  return { pass: true, msg: `hp=${e.hp} damage=${e.damage} speed=${e.speed}` };
+});
+check('stagger = 0.3 / hitStop = 0.05 / comboWindow = 0.8', () => {
+  const c = probe && probe.cfg;
+  if (!c || c.stagger == null) return 'TODO: probe.cfg 缺 M1 段(stagger/hitStop/comboWindow)';
+  const a = eq(c.stagger, 0.3, '硬直');
+  if (a !== true) return a;
+  const b = eq(c.hitStop, 0.05, 'hit-stop');
+  if (b !== true) return b;
+  const d = eq(c.comboWindow, 0.8, 'combo 視窗');
+  if (d !== true) return d;
+  return { pass: true, msg: `stagger=${c.stagger} hitStop=${c.hitStop} comboWindow=${c.comboWindow}` };
+});
+
+section('3 · M1 產品動詞:砍得出去、假人會死');
+const probe2 = await new Promise((resolve) => {
+  const f = document.createElement('iframe');
+  f.style.cssText = 'position:fixed;left:-9999px;top:0;width:320px;height:200px';
+  f.src = '../public/index.html?probe=2';
+  f.addEventListener('load', () =>
+    setTimeout(() => resolve(f.contentWindow ? f.contentWindow.__probe : null), 1200)
+  );
+  document.body.appendChild(f);
+});
+check('假人兩下普攻(15)死', () =>
+  probe2
+    ? probe2.enemyHp === 0
+      ? { pass: true, msg: `hp=0 state=${probe2.enemyState}` }
+      : `hp=${probe2.enemyHp} state=${probe2.enemyState}`
+    : 'TODO: probe=2 未實作'
+);
+check('combo 計數 = 2', () =>
+  probe2 ? (probe2.combo === 2 ? { pass: true, msg: 'combo=2' } : `combo=${probe2.combo}`) : 'TODO: probe=2 未實作'
+);
+check('將軍 hp = 100(假人 0.8s 內來不及出手)', () =>
+  probe2 ? (probe2.generalHp === 100 ? { pass: true, msg: 'hp=100' } : `hp=${probe2.generalHp}`) : 'TODO: probe=2 未實作'
+);
+check('擊殺時 hit-stop = 0.05', () =>
+  probe2
+    ? Math.abs(probe2.hitStop - 0.05) < 1e-9
+      ? { pass: true, msg: 'hitStop=0.05' }
+      : `hitStop=${probe2.hitStop}`
+    : 'TODO: probe=2 未實作'
+);
