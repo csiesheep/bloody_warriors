@@ -40,10 +40,12 @@ check('終點仍在界內', () =>
 );
 
 // ── M1(DESIGN.md v0.4:§3.1 普攻 15 / 硬直 0.3 / hit-stop 0.05;§2.3 敵兵 HP30 / 傷 5 / speed 3.5;§3.2 combo 0.8)──
-// ?probe=2 固定時間軸(決定性):t=0 假人在 (0,-5)、將軍朝 -z;t=0.1 第 1 段;t=0.35 第 2 段(擊殺)。
-// gameT ≥ 0.8 時回報 __probe = { M0 欄位, enemyHp, enemyState, generalHp, combo, hitStop, cfg: 完整 config }。
-// 時間軸算據:hitbox 有效幀在 windup 0.2s 後;擊殺 hit-stop 0.05s;假人 0.5s Spawn + 3.5 m/s,
-// gameT 0.8 時仍在 3.95 m 外(攻擊範圍 1.5 m),故 generalHp 必為 100。
+// ?probe=2 固定時間軸(決定性,issue #1 + orchestrator 裁定):t=0 假人在 (0,-2)、將軍朝 -z;
+// t=0.05 第 1 段;t=0.4 第 2 段(第 1 段後搖中)→ 第 2 段有效幀擊殺。
+// gameT ≥ 0.8 時回報 __probe = { enemyHp, enemyState, generalHp, combo, hitStop, cfg: 完整 config }。
+// 算據:第 1 段有效幀 ~0.25 命中(15);第 2 段 windup 0.2 後有效幀 ~0.6 命中(15)擊殺;
+// 假人 0.5s Spawn + 硬直 0.3s,被擊殺(0.6s)時尚未進攻擊範圍(1.5 m),故 generalHp 必為 100;
+// combo:兩命中間隔 ~0.34s < 0.8s 視窗 → 2;hitStop = 擊殺觸發的 0.05s 凍結。
 
 section('2 · M1 SPEC 常數對照(DESIGN.md v0.4)');
 check('attack.damage = 15', () => {
