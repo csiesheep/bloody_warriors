@@ -71,6 +71,13 @@ test('鏈接:1→2→3,鏈結束回 1', (t) => {
   assert.equal(combat.startSwing(g, 1), 1);
   stepToRecover(g);
   assert.equal(combat.startSwing(g, 2), 2, '第 1 段後搖中按鍵應接第 2 段');
+  // 後搖視窗(SPEC 0.25s):獨立場景——第 1 段後搖 0.2s 時按鍵仍應接鏈,而非開新鏈。
+  // (chainRecover 若縮到 ~0 這裡會紅——鏈接感靠這 0.25s 後搖撐著)
+  const g2 = combat.createGeneral(0, 0);
+  combat.startSwing(g2, 1);
+  stepToRecover(g2);
+  combat.stepSwing(g2, 0.2);
+  assert.equal(combat.startSwing(g2, 2), 2, '後搖 0.2s 時按鍵仍應接第 2 段');
   stepToRecover(g);
   assert.equal(combat.startSwing(g, 3), 3, '第 2 段後搖中按鍵應接第 3 段');
   stepToRecover(g);
