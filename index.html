@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>一騎當前 bloody_warriors (M0)</title>
+<title>一騎當前 bloody_warriors (M1)</title>
 <link rel="icon" href="favicon.svg">
 <style>
   html, body { margin: 0; height: 100%; overflow: hidden; background: #0f1116; }
@@ -19,11 +19,17 @@
     position: fixed; inset: 0; margin: 0; background: #000; color: #9f9;
     font: 12px/1.5 ui-monospace, monospace; white-space: pre-wrap; z-index: 9;
   }
+  #combo {
+    position: fixed; top: 14px; right: 18px; color: #ffd23f;
+    font: 700 22px system-ui, sans-serif; text-shadow: 0 1px 3px rgba(0, 0, 0, .8);
+    pointer-events: none;
+  }
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
-<div id="hud">M0 · WASD 移動 · 滑鼠指向<br>一騎當前 bloody_warriors</div>
+<div id="hud">M1 · WASD 移動 · 滑鼠指向 · 左鍵/J 普攻(三段)<br>一騎當前 bloody_warriors</div>
+<div id="combo"></div>
 <pre id="probe" hidden></pre>
 <script type="module" src="/src/game/main.ts"></script>
 </body>
