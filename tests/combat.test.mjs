@@ -13,6 +13,9 @@ const SPEC = {
   stagger: 0.3,     // 硬直(§3.1)
   hitStop: 0.05,    // hit-stop(§3.1)
   comboWindow: 0.8, // combo 視窗(§3.2)
+  // M1.5 觸控(issue #2,owner 拍板):
+  touchDeadzone: 0.3,   // 搖桿死區
+  autoAimRange: 12,     // 自動瞄準射程(m)
 };
 
 let combat;
@@ -107,6 +110,32 @@ test('hit-stop:擊殺時全場凍 0.05s', (t) => {
     Math.abs(combat.getHitStop() - SPEC.hitStop) < 1e-9,
     `期望 ${SPEC.hitStop},實際 ${combat.getHitStop()}`
   );
+});
+
+test('autoAim:朝最近存活敵兵;忽略 Die;超射程/全空 null', (t) => {
+  if (!combat || typeof combat.autoAim !== 'function') return todo(t, 'autoAim 未實作');
+  const near = { id: 1, x: 0, z: -4, hp: 30, state: 'Chase', stateT: 0, cdT: 0, facing: 0, flashT: 0 };
+  const far = { id: 2, x: 10, z: 0, hp: 30, state: 'Chase', stateT: 0, cdT: 0, facing: 0, flashT: 0 };
+  const dead = { id: 3, x: 2, z: 0, hp: 0, state: 'Die', stateT: 0, cdT: 0, facing: 0, flashT: 0 };
+  // dead 在 (2,0) 距離 2 最近,但已死 → 應取 near (0,-4) 距離 4
+  const a = combat.autoAim(0, 0, [far, dead, near]);
+  assert.ok(a !== null, '射程內有存活敵兵應有朝向');
+  assert.ok(Math.abs(a - Math.PI) < 1e-9, `應朝 near(-z),實際 ${a}`);
+  assert.equal(combat.autoAim(0, 0, [{ ...far, x: 0, z: -100 }]), null, `超出 autoAimRange(${SPEC.autoAimRange}) 應 null`);
+  assert.equal(combat.autoAim(0, 0, [dead]), null, '全死應 null');
+  assert.equal(combat.autoAim(0, 0, []), null, '無敵應 null');
+});
+
+test('joystickToInput:死區 + 四向 + 對角', (t) => {
+  if (!combat || typeof combat.joystickToInput !== 'function') return todo(t, 'joystickToInput 未實作');
+  const none = { forward: false, back: false, left: false, right: false };
+  assert.deepEqual(combat.joystickToInput(0, 0), none, '中心 = 無輸入');
+  assert.deepEqual(combat.joystickToInput(0.2, 0.2), none, `死區 ${SPEC.touchDeadzone} 內應無輸入`);
+  assert.deepEqual(combat.joystickToInput(0, 1), { ...none, forward: true }, '上 = forward');
+  assert.deepEqual(combat.joystickToInput(0, -1), { ...none, back: true }, '下 = back');
+  assert.deepEqual(combat.joystickToInput(-1, 0), { ...none, left: true }, '左 = left');
+  assert.deepEqual(combat.joystickToInput(1, 0), { ...none, right: true }, '右 = right');
+  assert.deepEqual(combat.joystickToInput(1, 1), { forward: true, back: false, left: false, right: true }, '對角');
 });
 
 function stepToRecover(g) {

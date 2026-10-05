@@ -105,3 +105,50 @@ check('擊殺時 hit-stop = 0.05', () =>
       : `hitStop=${probe2.hitStop}`
     : 'TODO: probe=2 未實作'
 );
+
+// ── M1.5 觸控(issue #2,owner 拍板自動瞄準):deadzone 0.3 / autoAimRange 12 m ──
+// ?probe=3 決定性時間軸:A) 假人 (0,-20)(超射程),搖桿 full forward 1s → 移動 ≈6 m;
+// B) 重置,假人 (0,-2),t=0.05/0.4 攻擊鈕×2(autoAim 每幀覆寫朝向)→ 擊殺、combo 2、hitStop 0.05。
+// 無 autoAim 時將軍保持 facing 0(+z)→ 朝 +z 砍 → 空砍 → 擊殺檢查紅。
+
+section('4 · M1.5 SPEC 常數對照(issue #2)');
+const probe3 = await new Promise((resolve) => {
+  const f = document.createElement('iframe');
+  f.style.cssText = 'position:fixed;left:-9999px;top:0;width:320px;height:200px';
+  f.src = '../public/index.html?probe=3';
+  f.addEventListener('load', () =>
+    setTimeout(() => resolve(f.contentWindow ? f.contentWindow.__probe : null), 1200)
+  );
+  document.body.appendChild(f);
+});
+check('touch.deadzone = 0.3 / autoAimRange = 12', () => {
+  const tc = probe3 && probe3.cfg && probe3.cfg.touch;
+  if (!tc) return 'TODO: probe=3 未實作(cfg.touch 缺)';
+  const a = eq(tc.deadzone, 0.3, '搖桿死區');
+  if (a !== true) return a;
+  const b = eq(tc.autoAimRange, 12, '自動瞄準射程');
+  if (b !== true) return b;
+  return { pass: true, msg: `deadzone=${tc.deadzone} autoAimRange=${tc.autoAimRange}` };
+});
+
+section('5 · M1.5 產品動詞:搖桿會走、自動瞄準會轉頭');
+check('搖桿 full forward 1s 移動約 6 m', () =>
+  probe3 ? near(probe3.moved, 6, 0.15, '移動距離') : 'TODO: probe=3 未實作'
+);
+check('自動瞄準:攻擊鈕兩下砍死 (0,-2) 假人', () =>
+  probe3
+    ? probe3.enemyHp === 0
+      ? { pass: true, msg: `hp=0 state=${probe3.enemyState}` }
+      : `hp=${probe3.enemyHp} state=${probe3.enemyState}`
+    : 'TODO: probe=3 未實作'
+);
+check('combo = 2 / hitStop = 0.05 / 將軍 hp = 100', () => {
+  if (!probe3) return 'TODO: probe=3 未實作';
+  const parts = [
+    probe3.combo === 2 ? 'combo=2' : `combo=${probe3.combo}`,
+    Math.abs(probe3.hitStop - 0.05) < 1e-9 ? 'hitStop=0.05' : `hitStop=${probe3.hitStop}`,
+    probe3.generalHp === 100 ? 'hp=100' : `hp=${probe3.generalHp}`,
+  ];
+  const pass = probe3.combo === 2 && Math.abs(probe3.hitStop - 0.05) < 1e-9 && probe3.generalHp === 100;
+  return { pass, msg: parts.join(' ') };
+});

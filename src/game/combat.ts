@@ -43,6 +43,36 @@ export interface HitEvent {
   kill: boolean;
 }
 
+// M1.5 觸控(issue #2):搖桿→方向輸入、自動瞄準。純邏輯,不碰 DOM。
+export function joystickToInput(vx: number, vy: number): {
+  forward: boolean;
+  back: boolean;
+  left: boolean;
+  right: boolean;
+} {
+  const dz = config.touch.deadzone;
+  return {
+    forward: vy > dz,
+    back: vy < -dz,
+    left: vx < -dz,
+    right: vx > dz,
+  };
+}
+
+export function autoAim(gx: number, gz: number, enemies: Enemy[]): number | null {
+  let best: Enemy | null = null;
+  let bestD = Infinity;
+  for (const e of enemies) {
+    if (e.state === 'Die') continue;
+    const d = Math.hypot(e.x - gx, e.z - gz);
+    if (d <= config.touch.autoAimRange && d < bestD) {
+      best = e;
+      bestD = d;
+    }
+  }
+  return best ? Math.atan2(best.x - gx, best.z - gz) : null;
+}
+
 let hitStopT = 0;
 
 export function createGeneral(x: number, z: number): General {
