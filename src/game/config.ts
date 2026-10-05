@@ -26,6 +26,11 @@ export const config = {
   stagger: 0.3, // §3.1
   hitStop: 0.05, // §3.1
   comboWindow: 0.8, // §3.2
+  // M1.5 觸控(iPhone,issue #2;owner 拍板自動瞄準):
+  touch: {
+    deadzone: 0.3, // 搖桿死區(|v| > 0.3 才計方向)
+    autoAimRange: 12, // 自動瞄準射程(m);無射程內存活敵兵 → 保持原朝向
+  },
 };
 
 export type Config = typeof config;
