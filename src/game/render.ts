@@ -1,10 +1,12 @@
 import * as THREE from 'three';
 import { config } from './config.ts';
+import type { Enemy } from './combat.ts';
 
 export interface View {
   resize(): void;
-  place(x: number, z: number, facing: number): void;
+  place(x: number, z: number, facing: number, shake?: boolean): void;
   aimAt(sx: number, sy: number, px: number, pz: number): number;
+  setEnemy(e: Enemy): void;
   render(): void;
 }
 
@@ -56,6 +58,13 @@ export function createScene(canvas: HTMLCanvasElement): View {
   player.add(spear);
   scene.add(player);
 
+  const enemyMesh = new THREE.Mesh(
+    new THREE.CapsuleGeometry(0.35, 0.9, 4, 12),
+    new THREE.MeshLambertMaterial({ color: 0xb23a2e })
+  );
+  enemyMesh.position.y = 1.0;
+  scene.add(enemyMesh);
+
   const ray = new THREE.Raycaster();
   const ndc = new THREE.Vector2();
 
@@ -70,11 +79,20 @@ export function createScene(canvas: HTMLCanvasElement): View {
   window.addEventListener('resize', resize);
   resize();
 
-  function place(x: number, z: number, facing: number): void {
+  function place(x: number, z: number, facing: number, shake: boolean): void {
     player.position.set(x, 0, z);
     player.rotation.y = facing;
-    camera.position.set(x, config.cam.y, z + config.cam.back);
+    const ox = shake ? (Math.random() - 0.5) * 0.12 : 0;
+    const oy = shake ? (Math.random() - 0.5) * 0.12 : 0;
+    camera.position.set(x + ox, config.cam.y + oy, z + config.cam.back);
     camera.lookAt(x, config.cam.targetY, z);
+  }
+
+  function setEnemy(e: Enemy): void {
+    const dead = e.state === 'Die';
+    enemyMesh.position.set(e.x, dead ? 0.45 : 1.0, e.z);
+    enemyMesh.rotation.set(dead ? Math.PI / 2 : 0, e.facing, 0);
+    (enemyMesh.material as THREE.MeshLambertMaterial).emissive.setHex(e.flashT > 0 ? 0xffffff : 0x000000);
   }
 
   function aimAt(sx: number, sy: number, px: number, pz: number): number {
@@ -88,7 +106,8 @@ export function createScene(canvas: HTMLCanvasElement): View {
     return Math.atan2(hx - px, hz - pz);
   }
 
-  place(0, 0, 0);
+  place(0, 0, 0, false);
+  setEnemy({ id: 0, x: 0, z: -4, hp: 30, state: 'Spawn', stateT: 0, cdT: 0, facing: 0, flashT: 0 });
 
-  return { resize, place, aimAt, render: () => renderer.render(scene, camera) };
+  return { resize, place, aimAt, setEnemy, render: () => renderer.render(scene, camera) };
 }

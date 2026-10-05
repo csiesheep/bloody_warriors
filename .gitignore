@@ -3,3 +3,4 @@ public/
 __MARKER_ORCH.txt
 __orch_*
 .claude/worktrees/
+harness_dump.txt
